@@ -1,0 +1,28 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  background: #0F172A;
+  min-height: 100%;
+  width: 100%;
+}
+
+body {
+  background: #0F172A;
+  color: #F8FAFC;
+  font-family: 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+#root {
+  background: #0F172A;
+  min-height: 100vh;
+  width: 100%;
+}
