@@ -23,7 +23,22 @@ const MODE_CONFIG = {
   },
 };
 
-export default function ModeSelector({ mode, setRoute }) {
+// Small icon per instruction type, purely cosmetic
+const TURN_ICON = {
+  "Turn left": "⬅",
+  "Turn right": "➡",
+  "Make a U-turn": "↩",
+  "Start your journey": "🏁",
+  "You have arrived at your destination!": "🏁",
+};
+
+function formatStepDistance(m) {
+  if (!m) return "";
+  if (m < 1000) return `${m} m`;
+  return `${(m / 1000).toFixed(1)} km`;
+}
+
+export default function ModeSelector({ mode, route, setRoute }) {
   const [city, setCity] = useState("Chhatrapati Sambhajinagar, Maharashtra, India");
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
@@ -200,6 +215,29 @@ export default function ModeSelector({ mode, setRoute }) {
             ))}
           </div>
           {routeLoading && <p className="sidebar-info-msg">Getting route...</p>}
+        </div>
+      )}
+
+      {route?.directions && route.directions.length > 0 && (
+        <div className="sidebar-section">
+          <p className="sidebar-section-title">Directions</p>
+          <div className="directions-list">
+            {route.directions.map((d) => (
+              <div key={d.step} className="direction-item">
+                <span className="direction-icon">
+                  {TURN_ICON[d.instruction] || "•"}
+                </span>
+                <div className="direction-text">
+                  <p className="direction-instruction">{d.instruction}</p>
+                  {d.distance_m > 0 && (
+                    <p className="direction-distance">
+                      {formatStepDistance(d.distance_m)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

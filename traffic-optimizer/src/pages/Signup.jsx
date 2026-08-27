@@ -4,8 +4,8 @@ import axios from "axios";
 
 export default function Signup() {
   const [form, setForm] = useState({
-    name: "", email: "", password: "", confirm: ""
-  });
+  name: "", email: "", password: "", confirm: "", role: "normal"
+});
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -26,10 +26,11 @@ export default function Signup() {
     setError(null);
     try {
       await axios.post("http://localhost:8000/auth/signup", {
-        name: form.name,
-        email: form.email,
-        password: form.password,
-      });
+  name: form.name,
+  email: form.email,
+  password: form.password,
+  role: form.role,
+});
       navigate("/login");
     } catch (err) {
       setError(err.response?.data?.detail || "Signup failed. Try again.");
@@ -51,16 +52,31 @@ export default function Signup() {
           <p className="form-sub">Start optimizing your routes today</p>
 
           <div className="field">
-            <label className="field-label">Full Name</label>
-            <input
-              className="field-input"
-              type="text"
-              name="name"
-              placeholder="Your name"
-              value={form.name}
-              onChange={handleChange}
-            />
-          </div>
+  <label className="field-label">Full Name</label>
+  <input
+    className="field-input"
+    type="text"
+    name="name"
+    placeholder="Your name"
+    value={form.name}
+    onChange={handleChange}
+  />
+</div>
+
+<div className="field">
+  <label className="field-label">I am a</label>
+  <select
+    className="field-input"
+    name="role"
+    value={form.role}
+    onChange={handleChange}
+    style={{ cursor: "pointer" }}
+  >
+    <option value="normal">Normal User</option>
+    <option value="emergency">Emergency Driver 🚑</option>
+    <option value="delivery">Delivery Rider 📦</option>
+  </select>
+</div>
 
           <div className="field">
             <label className="field-label">Email</label>

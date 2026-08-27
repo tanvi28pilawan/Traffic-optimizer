@@ -6,6 +6,7 @@ class UserCreate(BaseModel):
     name: str
     email: EmailStr
     password: str
+    role: str = "normal"
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -15,6 +16,7 @@ class UserResponse(BaseModel):
     id: int
     name: str
     email: str
+    role: str
     created_at: datetime
 
     class Config:
@@ -23,7 +25,8 @@ class UserResponse(BaseModel):
 class Token(BaseModel):
     token: str
     token_type: str
-    name:str
+    name: str
+    role: str
 
 class RouteCreate(BaseModel):
     mode: str

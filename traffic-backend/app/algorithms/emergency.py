@@ -1,8 +1,9 @@
-
 import os
 import osmnx as ox
 import networkx as nx
 import math
+
+from .geo_utils import get_turn_directions   # <-- ADD THIS IMPORT
 
 _graph_cache = {}
 CACHE_DIR = "graph_cache"
@@ -98,6 +99,8 @@ def get_emergency_route(source: str, city: str = "Chhatrapati Sambhajinagar, Mah
             node_data = G.nodes[node]
             coordinates.append([float(node_data["y"]), float(node_data["x"])])
 
+        directions = get_turn_directions(coordinates)   # <-- ADD THIS LINE
+
         return {
             "path": coordinates,
             "source": coordinates[0],
@@ -105,7 +108,8 @@ def get_emergency_route(source: str, city: str = "Chhatrapati Sambhajinagar, Mah
             "nearest_hospital": best_hospital,
             "hospitals": hospital_list[:10],
             "distance_m": round(best_length),
-            "distance_km": round(best_length / 1000, 2)
+            "distance_km": round(best_length / 1000, 2),
+            "directions": directions   # <-- ADD THIS KEY
         }
 
     except Exception as e:
@@ -133,13 +137,16 @@ def get_route_to_hospital(source: str, h_lat: float, h_lon: float, h_name: str, 
             node_data = G.nodes[node]
             coordinates.append([float(node_data["y"]), float(node_data["x"])])
 
+        directions = get_turn_directions(coordinates)   # <-- ADD THIS LINE
+
         return {
             "path": coordinates,
             "source": coordinates[0],
             "destination": coordinates[-1],
             "nearest_hospital": h_name,
             "distance_m": round(length),
-            "distance_km": round(length / 1000, 2)
+            "distance_km": round(length / 1000, 2),
+            "directions": directions   # <-- ADD THIS KEY
         }
 
     except Exception as e:

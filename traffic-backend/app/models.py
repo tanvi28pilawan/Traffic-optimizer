@@ -10,6 +10,7 @@ class User(Base):
     name = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
+    role = Column(String, default="normal")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     routes = relationship("Route", back_populates="owner")

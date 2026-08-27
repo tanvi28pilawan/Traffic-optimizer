@@ -22,7 +22,15 @@ export default function Login() {
       const res = await axios.post("http://localhost:8000/auth/login", form);
       localStorage.setItem("token", res.data.token);
 localStorage.setItem("userName", res.data.name);
-      navigate("/select");
+localStorage.setItem("userRole", res.data.role);
+
+if (res.data.role === "emergency") {
+  navigate("/app/emergency");
+} else if (res.data.role === "delivery") {
+  navigate("/app/delivery");
+} else {
+  navigate("/select");
+}
     } catch (err) {
   const detail = err.response?.data?.detail;
   if (Array.isArray(detail)) {
@@ -71,6 +79,11 @@ localStorage.setItem("userName", res.data.name);
               onChange={handleChange}
             />
           </div>
+          <div style={{ textAlign: "right" }}>
+  <Link to="/forgot-password" className="auth-link" style={{ fontSize: "12px" }}>
+    Forgot password?
+  </Link>
+</div>
 
           {error && <div className="auth-error">{error}</div>}
 

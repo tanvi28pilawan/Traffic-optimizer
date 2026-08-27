@@ -1,3 +1,5 @@
+import token
+
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -42,10 +44,11 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
             detail="Email already registered"
         )
     new_user = User(
-        name=user.name,
-        email=user.email,
-        hashed_password=hash_password(user.password)
-    )
+    name=user.name,
+    email=user.email,
+    hashed_password=hash_password(user.password),
+    role=user.role
+)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -60,7 +63,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
             detail="Invalid email or password"
         )
     token = create_access_token({"sub": str(db_user.id), "email": db_user.email})
-    return {"token": token, "token_type": "bearer", "name": db_user.name}
+    return {"token": token, "token_type": "bearer", "name": db_user.name, "role": db_user.role}
 
 @router.post("/forgot-password")
 async def forgot_password(request: Request, data: ForgotPasswordRequest, db: Session = Depends(get_db)):

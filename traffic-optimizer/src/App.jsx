@@ -33,7 +33,7 @@ export default function App() {
 
       <div className="main-layout">
         <aside className="sidebar">
-          <ModeSelector mode={mode} setRoute={setRoute} />
+          <ModeSelector mode={mode} route={route} setRoute={setRoute} />
         </aside>
         <main className="map-area">
           <MapView mode={mode} route={route} />

@@ -1,7 +1,8 @@
-
 import os
 import osmnx as ox
 import networkx as nx
+
+from .geo_utils import get_turn_directions   # <-- ADD THIS IMPORT
 
 _graph_cache = {}
 CACHE_DIR = "graph_cache"
@@ -91,13 +92,16 @@ def get_delivery_route(source: str, stops: list, city: str = "Chhatrapati Sambha
                 node_data = G.nodes[node]
                 full_path.append([node_data["y"], node_data["x"]])
 
+        directions = get_turn_directions(full_path)   # <-- ADD THIS LINE
+
         return {
             "path": full_path,
             "source": full_path[0] if full_path else None,
             "destination": full_path[-1] if full_path else None,
             "stops": ordered_coords,
             "distance_m": round(total_length),
-            "distance_km": round(total_length / 1000, 2)
+            "distance_km": round(total_length / 1000, 2),
+            "directions": directions   # <-- ADD THIS KEY
         }
 
     except Exception as e:

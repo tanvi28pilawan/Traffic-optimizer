@@ -798,3 +798,1245 @@ select.sidebar-input option {
 .profile-edit-btn:hover {
   transform: scale(1.2);
 }
+
+/* DIRECTIONS LIST */
+.directions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.direction-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #0F172A;
+  border: 1px solid #334155;
+  border-radius: 8px;
+}
+
+.direction-icon {
+  font-size: 14px;
+  line-height: 1.5;
+  min-width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.direction-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.direction-instruction {
+  font-size: 12px;
+  font-weight: 600;
+  color: #F8FAFC;
+  line-height: 1.4;
+}
+
+.direction-distance {
+  font-size: 11px;
+  color: #64748B;
+}
+/* =========================================
+   GOOGLE MAPS STYLE NAVIGATION OVERLAY
+========================================= */
+
+.map-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ---------- TOP TURN CARD ---------- */
+
+.navigation-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.navigation-turn-card {
+  position: absolute;
+  top: 22px;
+  left: 22px;
+
+  width: 390px;
+  min-height: 88px;
+
+  display: flex;
+  align-items: center;
+  gap: 15px;
+
+  padding: 14px 16px;
+
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+
+  color: white;
+
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+
+  backdrop-filter: blur(12px);
+
+  pointer-events: auto;
+}
+
+/* ---------- TURN ICON ---------- */
+
+.turn-icon-large {
+  width: 58px;
+  height: 58px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 14px;
+
+  background: #10b981;
+
+  font-size: 34px;
+  font-weight: 900;
+
+  color: white;
+
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
+}
+
+/* LEFT / RIGHT */
+
+.navigation-turn-card.left .turn-icon-large,
+.navigation-turn-card.right .turn-icon-large {
+  background: #2563eb;
+}
+
+.navigation-turn-card.uturn .turn-icon-large {
+  background: #8b5cf6;
+}
+
+.navigation-turn-card.arrival .turn-icon-large {
+  background: #f59e0b;
+}
+
+/* ---------- TURN TEXT ---------- */
+
+.turn-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.turn-distance {
+  font-size: 13px;
+  font-weight: 700;
+  color: #93c5fd;
+
+  margin-bottom: 3px;
+}
+
+.turn-instruction {
+  font-size: 19px;
+  font-weight: 800;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.after-turn {
+  margin-top: 4px;
+
+  font-size: 11px;
+  color: #94a3b8;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- VOICE BUTTON ---------- */
+
+.voice-button {
+  width: 42px;
+  height: 42px;
+
+  flex-shrink: 0;
+
+  border: none;
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.08);
+
+  color: white;
+
+  font-size: 18px;
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+.voice-button:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: scale(1.05);
+}
+
+.voice-button.active {
+  background: #2563eb;
+}
+
+
+/* =========================================
+   BOTTOM NAVIGATION BAR
+========================================= */
+
+.navigation-bottom-card {
+  position: absolute;
+
+  left: 50%;
+  bottom: 24px;
+
+  transform: translateX(-50%);
+
+  width: min(720px, calc(100% - 48px));
+  min-height: 72px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 12px 16px;
+
+  background: rgba(15, 23, 42, 0.96);
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+
+  color: white;
+
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+
+  backdrop-filter: blur(14px);
+
+  pointer-events: auto;
+}
+
+
+/* ---------- STATS ---------- */
+
+.nav-stat {
+  display: flex;
+  flex-direction: column;
+
+  min-width: 85px;
+
+  padding: 0 10px;
+}
+
+.nav-stat-label {
+  font-size: 9px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.12em;
+
+  color: #64748b;
+}
+
+.nav-stat-value {
+  margin-top: 4px;
+
+  font-size: 17px;
+
+  font-weight: 800;
+
+  color: #f8fafc;
+}
+
+
+/* ---------- DIVIDER ---------- */
+
+.nav-divider {
+  width: 1px;
+  height: 38px;
+
+  margin: 0 6px;
+
+  background: rgba(255, 255, 255, 0.1);
+}
+
+
+/* ---------- NEXT TURN ---------- */
+
+.nav-next {
+  flex: 1;
+
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  padding-left: 10px;
+}
+
+.nav-next-text {
+  margin-top: 4px;
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  color: #e2e8f0;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* ---------- NEXT BUTTON ---------- */
+
+.next-turn-button {
+  margin-left: 12px;
+
+  padding: 9px 13px;
+
+  border: none;
+  border-radius: 9px;
+
+  background: #2563eb;
+
+  color: white;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.next-turn-button:hover {
+  background: #1d4ed8;
+}
+
+.next-turn-button:disabled {
+  opacity: 0.35;
+
+  cursor: not-allowed;
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 700px) {
+
+  .navigation-turn-card {
+    top: 12px;
+    left: 12px;
+    right: 12px;
+
+    width: auto;
+  }
+
+  .turn-icon-large {
+    width: 48px;
+    height: 48px;
+
+    font-size: 28px;
+  }
+
+  .turn-instruction {
+    font-size: 16px;
+  }
+
+  .navigation-bottom-card {
+    bottom: 12px;
+
+    width: calc(100% - 24px);
+  }
+
+  .nav-next {
+    display: none;
+  }
+
+  .nav-stat {
+    min-width: 65px;
+  }
+
+  .next-turn-button {
+    padding: 8px 10px;
+  }
+}
+.gps-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 12px;
+
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+
+  color: #94a3b8;
+}
+
+.gps-dot {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+  background: #22c55e;
+
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+}
+/* =====================================================
+   GOOGLE MAPS STYLE NAVIGATION OVERLAY
+   ===================================================== */
+
+.map-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.navigation-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px;
+}
+
+/* =====================================================
+   TOP TURN CARD
+   ===================================================== */
+
+.navigation-turn-card {
+  pointer-events: auto;
+  align-self: flex-start;
+
+  min-width: 340px;
+  max-width: 440px;
+
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  padding: 16px 18px;
+
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid #334155;
+  border-radius: 16px;
+
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+
+  backdrop-filter: blur(12px);
+
+  transition: 0.2s ease;
+}
+
+/* TURN ICON */
+
+.turn-icon-large {
+  width: 58px;
+  height: 58px;
+
+  border-radius: 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #1E293B;
+
+  color: #F8FAFC;
+
+  font-size: 38px;
+  font-weight: 700;
+
+  flex-shrink: 0;
+}
+
+/* TURN COLORS */
+
+.navigation-turn-card.left .turn-icon-large {
+  color: #60A5FA;
+}
+
+.navigation-turn-card.right .turn-icon-large {
+  color: #60A5FA;
+}
+
+.navigation-turn-card.uturn .turn-icon-large {
+  color: #FBBF24;
+}
+
+.navigation-turn-card.arrival .turn-icon-large {
+  color: #34D399;
+}
+
+.navigation-turn-card.straight .turn-icon-large {
+  color: #60A5FA;
+}
+
+/* TURN INFORMATION */
+
+.turn-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.turn-distance {
+  font-size: 14px;
+  font-weight: 700;
+  color: #60A5FA;
+  margin-bottom: 3px;
+}
+
+.turn-instruction {
+  font-size: 18px;
+  font-weight: 700;
+  color: #F8FAFC;
+  line-height: 1.3;
+}
+
+.after-turn {
+  margin-top: 5px;
+
+  font-size: 11px;
+  color: #64748B;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =====================================================
+   VOICE BUTTON
+   ===================================================== */
+
+.voice-button {
+  width: 42px;
+  height: 42px;
+
+  border-radius: 50%;
+
+  border: 1px solid #334155;
+
+  background: #0F172A;
+
+  color: #F8FAFC;
+
+  font-size: 18px;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  transition: 0.2s ease;
+}
+
+.voice-button:hover {
+  transform: scale(1.08);
+  border-color: #64748B;
+}
+
+.voice-button.active {
+  background: #1E293B;
+}
+
+/* =====================================================
+   BOTTOM INFO CARD
+   ===================================================== */
+
+.navigation-bottom-card {
+  pointer-events: auto;
+
+  align-self: center;
+
+  width: min(850px, 90%);
+
+  min-height: 76px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 14px 20px;
+
+  background: rgba(15, 23, 42, 0.96);
+
+  border: 1px solid #334155;
+
+  border-radius: 16px;
+
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+
+  backdrop-filter: blur(12px);
+}
+
+/* =====================================================
+   STATS
+   ===================================================== */
+
+.nav-stat {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+
+  min-width: 100px;
+}
+
+.nav-stat-label {
+  font-size: 9px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.1em;
+
+  color: #64748B;
+}
+
+.nav-stat-value {
+  font-size: 17px;
+
+  font-weight: 700;
+
+  color: #F8FAFC;
+}
+
+.nav-divider {
+  width: 1px;
+
+  height: 38px;
+
+  background: #334155;
+
+  margin: 0 18px;
+}
+
+/* =====================================================
+   NEXT
+   ===================================================== */
+
+.nav-next {
+  flex: 1;
+
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+.nav-next-text {
+  font-size: 13px;
+
+  font-weight: 600;
+
+  color: #CBD5E1;
+
+  white-space: nowrap;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+}
+
+/* =====================================================
+   GPS STATUS
+   ===================================================== */
+
+.gps-status {
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+
+  margin-left: 16px;
+
+  font-size: 10px;
+
+  font-weight: 600;
+
+  color: #64748B;
+
+  white-space: nowrap;
+}
+
+.gps-dot {
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  background: #475569;
+}
+
+.gps-dot.gps-active {
+  background: #22C55E;
+
+  box-shadow:
+    0 0 0 4px rgba(34, 197, 94, 0.15),
+    0 0 10px rgba(34, 197, 94, 0.7);
+
+  animation: gpsPulse 1.8s infinite;
+}
+
+@keyframes gpsPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* =====================================================
+   BACK / NEXT CONTROLS
+   ===================================================== */
+
+.navigation-controls {
+  pointer-events: auto;
+
+  align-self: center;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 14px;
+
+  margin-top: -8px;
+}
+
+.nav-control-button {
+  min-width: 115px;
+
+  padding: 11px 20px;
+
+  border-radius: 10px;
+
+  border: 1px solid #475569;
+
+  background: rgba(15, 23, 42, 0.96);
+
+  color: #F8FAFC;
+
+  font-size: 13px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  backdrop-filter: blur(10px);
+
+  transition:
+    transform 0.15s,
+    background 0.15s,
+    border-color 0.15s,
+    opacity 0.15s;
+}
+
+.nav-control-button:hover:not(:disabled) {
+  background: #1E293B;
+
+  border-color: #64748B;
+
+  transform: translateY(-2px);
+}
+
+.nav-control-button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.nav-control-button:disabled {
+  opacity: 0.35;
+
+  cursor: not-allowed;
+}
+
+.nav-step-indicator {
+  min-width: 55px;
+
+  text-align: center;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  color: #94A3B8;
+}
+
+/* =====================================================
+   MOBILE
+   ===================================================== */
+
+@media (max-width: 700px) {
+
+  .navigation-overlay {
+    padding: 12px;
+  }
+
+  .navigation-turn-card {
+    min-width: 0;
+
+    width: 100%;
+
+    max-width: none;
+
+    padding: 12px;
+  }
+
+  .turn-icon-large {
+    width: 48px;
+    height: 48px;
+
+    font-size: 30px;
+  }
+
+  .turn-instruction {
+    font-size: 15px;
+  }
+
+  .navigation-bottom-card {
+    width: 100%;
+
+    padding: 12px;
+
+    gap: 8px;
+  }
+
+  .nav-divider {
+    margin: 0 8px;
+  }
+
+  .nav-stat {
+    min-width: auto;
+  }
+
+  .nav-stat-value {
+    font-size: 14px;
+  }
+
+  .gps-status {
+    display: none;
+  }
+
+  .navigation-controls {
+    width: 100%;
+  }
+
+  .nav-control-button {
+    flex: 1;
+  }
+}
+/* =====================================================
+   MOBILE RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 768px) {
+
+  /* ---------- HEADER ---------- */
+
+  .app-header {
+    height: 52px;
+    padding: 0 12px;
+  }
+
+  .header-left {
+    gap: 7px;
+    min-width: 0;
+  }
+
+  .header-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+  }
+
+  .logo {
+    font-size: 14px;
+  }
+
+  .tagline {
+    display: none;
+  }
+
+  .header-right {
+    gap: 6px;
+  }
+
+  .back-btn,
+  .logout-btn-header {
+    font-size: 10px;
+    padding: 6px 8px;
+  }
+
+
+  /* ---------- MAIN LAYOUT ---------- */
+
+  .main-layout {
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+
+  /* ---------- SIDEBAR ---------- */
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 45vh;
+
+    border-right: none;
+    border-bottom: 1px solid #334155;
+
+    overflow-y: auto;
+    flex-shrink: 0;
+
+    order: 1;
+  }
+
+  .sidebar-inner {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .mode-badge {
+    padding: 9px 11px;
+  }
+
+  .mode-badge-icon {
+    font-size: 20px;
+  }
+
+  .mode-badge-label {
+    font-size: 12px;
+  }
+
+  .mode-badge-desc {
+    font-size: 10px;
+  }
+
+  .sidebar-section {
+    gap: 10px;
+  }
+
+  .sidebar-section-title {
+    font-size: 9px;
+  }
+
+  .sidebar-field {
+    gap: 5px;
+  }
+
+  .sidebar-label {
+    font-size: 11px;
+  }
+
+  .sidebar-input {
+    padding: 9px 10px;
+    font-size: 13px;
+  }
+
+  .sidebar-textarea {
+    height: 70px;
+  }
+
+  .sidebar-btn {
+    padding: 10px;
+  }
+
+
+  /* ---------- HOSPITALS ---------- */
+
+  .hospital-list {
+    max-height: 150px;
+    overflow-y: auto;
+  }
+
+  .hospital-item {
+    padding: 9px 10px;
+  }
+
+
+  /* ---------- DIRECTIONS ---------- */
+
+  .directions-list {
+    max-height: 160px;
+  }
+
+  .direction-item {
+    padding: 8px 10px;
+  }
+
+
+  /* ---------- MAP ---------- */
+
+  .map-area {
+    width: 100%;
+    min-height: 0;
+    flex: 1;
+
+    order: 2;
+  }
+
+  .map-wrapper {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+
+  /* =================================================
+     NAVIGATION OVERLAY
+     ================================================= */
+
+  .navigation-overlay {
+    padding: 10px;
+  }
+
+
+  /* ---------- TOP TURN CARD ---------- */
+
+  .navigation-turn-card {
+    width: calc(100% - 20px);
+
+    min-width: 0;
+    max-width: none;
+
+    align-self: center;
+
+    padding: 10px 12px;
+
+    gap: 10px;
+
+    border-radius: 14px;
+  }
+
+  .turn-icon-large {
+    width: 46px;
+    height: 46px;
+
+    border-radius: 11px;
+
+    font-size: 29px;
+  }
+
+  .turn-distance {
+    font-size: 12px;
+  }
+
+  .turn-instruction {
+    font-size: 15px;
+  }
+
+  .after-turn {
+    font-size: 10px;
+  }
+
+  .voice-button {
+    width: 38px;
+    height: 38px;
+
+    font-size: 16px;
+  }
+
+
+  /* ---------- BOTTOM INFO ---------- */
+
+  .navigation-bottom-card {
+    width: calc(100% - 20px);
+
+    min-height: 62px;
+
+    padding: 10px 12px;
+
+    border-radius: 13px;
+  }
+
+  .nav-stat {
+    min-width: 55px;
+  }
+
+  .nav-stat-label {
+    font-size: 8px;
+  }
+
+  .nav-stat-value {
+    font-size: 13px;
+  }
+
+  .nav-divider {
+    height: 30px;
+    margin: 0 8px;
+  }
+
+  .nav-next {
+    min-width: 0;
+  }
+
+  .nav-next-text {
+    font-size: 10px;
+  }
+
+  .gps-status {
+    margin-left: 8px;
+    font-size: 9px;
+  }
+
+
+  /* ---------- BACK / NEXT ---------- */
+
+  .navigation-controls {
+    width: calc(100% - 20px);
+
+    gap: 8px;
+
+    margin-top: -2px;
+  }
+
+  .nav-control-button {
+    min-width: 0;
+
+    flex: 1;
+
+    padding: 10px 12px;
+
+    border-radius: 9px;
+
+    font-size: 12px;
+  }
+
+  .nav-step-indicator {
+    min-width: 42px;
+    font-size: 11px;
+  }
+}
+
+
+/* =====================================================
+   VERY SMALL PHONES
+   ===================================================== */
+
+@media (max-width: 480px) {
+
+  .app-header {
+    padding: 0 8px;
+  }
+
+  .logo {
+    font-size: 13px;
+  }
+
+  .back-btn {
+    font-size: 9px;
+    padding: 5px 7px;
+  }
+
+  .logout-btn-header {
+    font-size: 9px;
+    padding: 5px 7px;
+  }
+
+
+  .sidebar {
+    max-height: 42vh;
+  }
+
+  .sidebar-inner {
+    padding: 10px;
+  }
+
+
+  /* Make navigation card compact */
+
+  .navigation-turn-card {
+    padding: 9px;
+    gap: 8px;
+  }
+
+  .turn-icon-large {
+    width: 42px;
+    height: 42px;
+    font-size: 26px;
+  }
+
+  .turn-instruction {
+    font-size: 14px;
+  }
+
+  .turn-distance {
+    font-size: 11px;
+  }
+
+  .after-turn {
+    font-size: 9px;
+  }
+
+  .voice-button {
+    width: 35px;
+    height: 35px;
+    font-size: 15px;
+  }
+
+
+  /* Bottom card */
+
+  .navigation-bottom-card {
+    padding: 8px;
+  }
+
+  .nav-stat {
+    min-width: 48px;
+  }
+
+  .nav-stat-value {
+    font-size: 12px;
+  }
+
+  .nav-next {
+    display: none;
+  }
+
+  .nav-divider {
+    margin: 0 6px;
+  }
+
+  .gps-status {
+    font-size: 8px;
+    margin-left: 5px;
+  }
+
+
+  .nav-control-button {
+    padding: 9px 8px;
+    font-size: 11px;
+  }
+}
