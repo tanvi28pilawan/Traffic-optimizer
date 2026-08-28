@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import TrafficLogo from "../components/TrafficLogo.jsx";
 
 export default function ForgotPassword() {
   const [step, setStep] = useState(1); // 1: email, 2: otp + new password
@@ -48,10 +49,9 @@ export default function ForgotPassword() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-brand">
-          <div className="brand-icon">T</div>
-          <h1 className="brand-name">TrafficOpt</h1>
-          <p className="brand-sub">Intelligent Routing System</p>
-        </div>
+  <TrafficLogo />
+  <p className="brand-sub">Intelligent Routing System</p>
+</div>
 
         <div className="auth-form">
           <h2 className="form-title">

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import TrafficLogo from "../components/TrafficLogo.jsx";
 
 export default function Signup() {
   const [form, setForm] = useState({
@@ -39,13 +40,12 @@ export default function Signup() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-brand">
-          <div className="brand-icon">T</div>
-          <h1 className="brand-name">TrafficOpt</h1>
-          <p className="brand-sub">Intelligent Routing System</p>
-        </div>
+   <div className="auth-page">
+  <div className="auth-card">
+    <div className="auth-brand">
+      <TrafficLogo />
+      <p className="brand-sub">Intelligent Routing System</p>
+    </div>
 
         <div className="auth-form">
           <h2 className="form-title">Create account</h2>

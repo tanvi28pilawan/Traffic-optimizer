@@ -18,22 +18,38 @@ body {
   border-bottom: 1px solid #334155;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 0 24px;
   flex-shrink: 0;
 }
 
-.header-left { display: flex; align-items: center; gap: 10px; }
-
-.header-icon {
-  width: 30px; height: 30px;
-  background: #10B981; border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 14px; color: #fff;
+.header-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
-.logo { font-size: 16px; font-weight: 600; color: #F8FAFC; }
-.tagline { font-size: 12px; color: #64748B; }
+.back-btn {
+  font-size: 12px; color: #94A3B8;
+  background: none; border: 1px solid #334155;
+  border-radius: 6px; padding: 6px 14px; cursor: pointer;
+}
+.back-btn:hover { color: #F8FAFC; border-color: #475569; }
+
+.logout-btn-header {
+  font-size: 12px;
+  color: #F8FAFC;
+  background: #334155;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+.logout-btn-header:hover {
+  background: #475569;
+}
 
 .back-btn {
   font-size: 12px; color: #94A3B8;
@@ -1667,35 +1683,22 @@ select.sidebar-input option {
   .app-header {
     height: 52px;
     padding: 0 12px;
-  }
-
-  .header-left {
-    gap: 7px;
-    min-width: 0;
-  }
-
-  .header-icon {
-    width: 28px;
-    height: 28px;
-    font-size: 13px;
-  }
-
-  .logo {
-    font-size: 14px;
-  }
-
-  .tagline {
-    display: none;
+    justify-content: flex-end;
   }
 
   .header-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
     gap: 6px;
+    width: auto;
   }
 
   .back-btn,
   .logout-btn-header {
     font-size: 10px;
-    padding: 6px 8px;
+    padding: 6px 9px;
+    white-space: nowrap;
   }
 
 
@@ -1948,21 +1951,20 @@ select.sidebar-input option {
 @media (max-width: 480px) {
 
   .app-header {
+    height: 50px;
     padding: 0 8px;
+    justify-content: flex-end;
   }
 
-  .logo {
-    font-size: 13px;
+  .header-right {
+    gap: 5px;
   }
 
-  .back-btn {
-    font-size: 9px;
-    padding: 5px 7px;
-  }
-
+  .back-btn,
   .logout-btn-header {
     font-size: 9px;
     padding: 5px 7px;
+    white-space: nowrap;
   }
 
 
@@ -2079,4 +2081,23 @@ select.sidebar-input option {
     font-size: 10px;
     padding: 4px 8px;
   }
+}
+/* TrafficOpt Logo */
+.traffic-logo {
+  display: flex;
+  align-items: center;
+}
+
+.traffic-logo-image {
+  width: 190px;
+  height: auto;
+  max-height: 70px;
+  object-fit: contain;
+  display: block;
+  
+}
+
+.traffic-logo.compact .traffic-logo-image {
+  width: 125px;
+  max-height: 45px;
 }

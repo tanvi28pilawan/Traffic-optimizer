@@ -16,16 +16,18 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <div className="header-left">
-          <div className="header-icon">T</div>
-          <span className="logo">TrafficOpt</span>
-          <span className="tagline">Intelligent Routing System</span>
-        </div>
         <div className="header-right">
-          <button className="back-btn" onClick={() => navigate("/select")}>
+          <button
+            className="back-btn"
+            onClick={() => navigate("/select")}
+          >
             ← Change Mode
           </button>
-          <button className="logout-btn-header" onClick={handleLogout}>
+
+          <button
+            className="logout-btn-header"
+            onClick={handleLogout}
+          >
             Logout
           </button>
         </div>
@@ -33,10 +35,18 @@ export default function App() {
 
       <div className="main-layout">
         <aside className="sidebar">
-          <ModeSelector mode={mode} route={route} setRoute={setRoute} />
+          <ModeSelector
+            mode={mode}
+            route={route}
+            setRoute={setRoute}
+          />
         </aside>
+
         <main className="map-area">
-          <MapView mode={mode} route={route} />
+          <MapView
+            mode={mode}
+            route={route}
+          />
         </main>
       </div>
     </div>
