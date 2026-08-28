@@ -66,6 +66,13 @@ export default function NavigationOverlay({
   const current = directions[activeIndex];
   const next = directions[activeIndex + 1];
 
+  // Stop any speech if this screen goes away (e.g. user changes mode)
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis?.cancel();
+    };
+  }, []);
+
   // Reset when a new route is created
   useEffect(() => {
     setActiveIndex(0);
@@ -113,10 +120,6 @@ export default function NavigationOverlay({
       current.lon
     );
 
-    console.log(
-      `Step ${activeIndex + 1}: ${Math.round(distance)}m`
-    );
-
     const isArrival =
       current.instruction
         ?.toLowerCase()
@@ -142,7 +145,7 @@ export default function NavigationOverlay({
   ]);
 
   // --------------------------------------------------
-  // VOICE
+  // VOICE (automatic, as GPS reaches each step)
   // --------------------------------------------------
 
   useEffect(() => {
@@ -204,7 +207,7 @@ export default function NavigationOverlay({
   ]);
 
   // --------------------------------------------------
-  // MANUAL VOICE
+  // MANUAL VOICE (speaker button)
   // --------------------------------------------------
 
   const handleVoice = () => {
@@ -241,13 +244,41 @@ export default function NavigationOverlay({
   };
 
   // --------------------------------------------------
+  // SPEAK A SPECIFIC STEP (used by Back/Next -- always
+  // speaks, even if that step was already announced before)
+  // --------------------------------------------------
+
+  const speakStep = (step) => {
+    if (!step || !voiceEnabled) return;
+    if (!("speechSynthesis" in window)) return;
+
+    window.speechSynthesis.cancel();
+
+    const isArrival = step.instruction?.toLowerCase().includes("arrived");
+    let text = step.instruction;
+
+    if (!isArrival && step.distance_m > 0) {
+      text = `${step.instruction} in ${formatDistance(step.distance_m)}`;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // --------------------------------------------------
   // BACK
   // --------------------------------------------------
 
   const handleBack = () => {
     if (activeIndex <= 0) return;
 
-    setActiveIndex((prev) => prev - 1);
+    const newIndex = activeIndex - 1;
+    setActiveIndex(newIndex);
+    speakStep(directions[newIndex]);
   };
 
   // --------------------------------------------------
@@ -262,7 +293,9 @@ export default function NavigationOverlay({
       return;
     }
 
-    setActiveIndex((prev) => prev + 1);
+    const newIndex = activeIndex + 1;
+    setActiveIndex(newIndex);
+    speakStep(directions[newIndex]);
   };
 
   if (!directions.length) {

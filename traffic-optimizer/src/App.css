@@ -2040,3 +2040,43 @@ select.sidebar-input option {
     font-size: 11px;
   }
 }
+@media (max-width: 600px) {
+  .mode-cards {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+
+  .mcard {
+    width: 100%;
+  }
+
+  .mode-body {
+    padding: 24px 16px;
+  }
+
+  .mode-title {
+    font-size: 22px;
+  }
+
+  .mode-nav {
+    padding: 0 12px;
+    flex-wrap: wrap;
+    height: auto;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .nav-right {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .nav-user {
+    display: none;
+  }
+
+  .logout-btn {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+}

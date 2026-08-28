@@ -43,10 +43,6 @@ export default function ModeSelect() {
     navigate(`/app/${modeId}`);
   };
 
-  
-  <button className="logout-btn" onClick={() => navigate("/history")}>
-  History
-</button>
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
@@ -59,16 +55,16 @@ export default function ModeSelect() {
           <div className="nav-icon">T</div>
           <span className="nav-name">TrafficOpt</span>
         </div>
-       <div className="nav-right">
-  <span className="nav-user">{localStorage.getItem("userName") || "User"}</span>
-  <button className="logout-btn" onClick={() => navigate("/profile")}>
-    Profile
-  </button>
-  <button className="logout-btn" onClick={() => navigate("/history")}>
-    History
-  </button>
-  <button className="logout-btn" onClick={handleLogout}>Logout</button>
-</div>
+        <div className="nav-right">
+          <span className="nav-user">{localStorage.getItem("userName") || "User"}</span>
+          <button className="logout-btn" onClick={() => navigate("/profile")}>
+            Profile
+          </button>
+          <button className="logout-btn" onClick={() => navigate("/history")}>
+            History
+          </button>
+          <button className="logout-btn" onClick={handleLogout}>Logout</button>
+        </div>
       </nav>
 
       <div className="mode-body">

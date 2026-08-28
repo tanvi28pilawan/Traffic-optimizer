@@ -3,9 +3,10 @@ import osmnx as ox
 import networkx as nx
 import math
 
-from .geo_utils import get_turn_directions   # <-- ADD THIS IMPORT
+from .geo_utils import get_turn_directions, make_heuristic, distance_m
 
 _graph_cache = {}
+_hospital_cache = {}   # NEW: caches the hospital list per city
 CACHE_DIR = "graph_cache"
 
 def get_graph(city: str):
@@ -29,9 +30,35 @@ def get_graph(city: str):
 
     return _graph_cache[city]
 
+
+def get_hospitals(city: str):
+    """
+    Fetches hospitals for a city from OSM once, then reuses the result
+    for every future request (in-memory, resets when the server restarts).
+    This is the single biggest slowdown in emergency mode -- the Overpass
+    API call inside ox.features_from_place() can take several seconds,
+    and previously it ran on every single request.
+    """
+    if city in _hospital_cache:
+        return _hospital_cache[city]
+
+    print(f"Fetching hospitals for {city} from OSM...")
+    hospitals = ox.features_from_place(city, tags={"amenity": "hospital"})
+
+    if not hospitals.empty and "name" in hospitals.columns:
+        hospitals = hospitals[
+            ~hospitals["name"].str.lower().str.contains("vet|pet|animal|clinic", na=False)
+        ]
+
+    _hospital_cache[city] = hospitals
+    print(f"Cached {len(hospitals)} hospitals for {city}.")
+    return hospitals
+
+
 def get_emergency_route(source: str, city: str = "Chhatrapati Sambhajinagar, Maharashtra, India"):
     try:
         G = get_graph(city)
+        heuristic = make_heuristic(G)
 
         city_short = city.split(",")[0].strip()
         try:
@@ -41,21 +68,13 @@ def get_emergency_route(source: str, city: str = "Chhatrapati Sambhajinagar, Mah
 
         source_node = ox.nearest_nodes(G, source_point[1], source_point[0])
 
-        hospitals = ox.features_from_place(city, tags={"amenity": "hospital"})
+        hospitals = get_hospitals(city)
 
         if hospitals.empty:
             raise Exception("No hospitals found nearby!")
 
-        if "name" in hospitals.columns:
-            hospitals = hospitals[
-                ~hospitals["name"].str.lower().str.contains("vet|pet|animal|clinic", na=False)
-            ]
-
-        hospital_list = []
-        best_path = None
-        best_length = float("inf")
-        best_hospital = None
-
+        # Step 1: cheap pre-filter using straight-line distance (fast, no graph search)
+        candidates = []
         for idx, hospital in hospitals.iterrows():
             try:
                 if hospital.geometry.geom_type == "Point":
@@ -68,29 +87,54 @@ def get_emergency_route(source: str, city: str = "Chhatrapati Sambhajinagar, Mah
                 if math.isnan(h_lat) or math.isnan(h_lon):
                     continue
 
-                h_node = ox.nearest_nodes(G, h_lon, h_lat)
-                length = nx.shortest_path_length(G, source_node, h_node, weight="length")
-
                 hospital_name = hospital.get("name", "Unknown Hospital")
                 if not isinstance(hospital_name, str):
                     hospital_name = "Unknown Hospital"
 
-                hospital_list.append({
+                straight_dist = distance_m((source_point[0], source_point[1]), (h_lat, h_lon))
+                candidates.append({
                     "name": hospital_name,
-                    "coords": [float(h_lat), float(h_lon)],
+                    "lat": h_lat,
+                    "lon": h_lon,
+                    "straight_dist": straight_dist,
+                })
+            except Exception:
+                continue
+
+        # Only run the expensive graph search (A*) on the nearest 8 by
+        # straight-line distance, instead of every hospital in the city.
+        candidates.sort(key=lambda c: c["straight_dist"])
+        candidates = candidates[:8]
+
+        hospital_list = []
+        best_node = None
+        best_length = float("inf")
+        best_hospital = None
+
+        for c in candidates:
+            try:
+                h_node = ox.nearest_nodes(G, c["lon"], c["lat"])
+                length = nx.astar_path_length(G, source_node, h_node, heuristic=heuristic, weight="length")
+
+                hospital_list.append({
+                    "name": c["name"],
+                    "coords": [float(c["lat"]), float(c["lon"])],
                     "distance_km": round(length / 1000, 2)
                 })
 
                 if length < best_length:
                     best_length = length
-                    best_path = nx.shortest_path(G, source_node, h_node, weight="length")
-                    best_hospital = hospital_name
+                    best_node = h_node
+                    best_hospital = c["name"]
 
             except Exception:
                 continue
 
-        if not best_path:
+        if best_node is None:
             raise Exception("Could not find route to any hospital!")
+
+        # Only compute the full path once, for the winner
+        best_path = nx.astar_path(G, source_node, best_node, heuristic=heuristic, weight="length")
 
         hospital_list.sort(key=lambda x: x["distance_km"])
 
@@ -99,7 +143,7 @@ def get_emergency_route(source: str, city: str = "Chhatrapati Sambhajinagar, Mah
             node_data = G.nodes[node]
             coordinates.append([float(node_data["y"]), float(node_data["x"])])
 
-        directions = get_turn_directions(coordinates)   # <-- ADD THIS LINE
+        directions = get_turn_directions(coordinates)
 
         return {
             "path": coordinates,
@@ -109,7 +153,7 @@ def get_emergency_route(source: str, city: str = "Chhatrapati Sambhajinagar, Mah
             "hospitals": hospital_list[:10],
             "distance_m": round(best_length),
             "distance_km": round(best_length / 1000, 2),
-            "directions": directions   # <-- ADD THIS KEY
+            "directions": directions
         }
 
     except Exception as e:
@@ -119,6 +163,7 @@ def get_emergency_route(source: str, city: str = "Chhatrapati Sambhajinagar, Mah
 def get_route_to_hospital(source: str, h_lat: float, h_lon: float, h_name: str, city: str = "Chhatrapati Sambhajinagar, Maharashtra, India"):
     try:
         G = get_graph(city)
+        heuristic = make_heuristic(G)
 
         city_short = city.split(",")[0].strip()
         try:
@@ -129,15 +174,15 @@ def get_route_to_hospital(source: str, h_lat: float, h_lon: float, h_name: str, 
         source_node = ox.nearest_nodes(G, source_point[1], source_point[0])
         h_node = ox.nearest_nodes(G, h_lon, h_lat)
 
-        path = nx.shortest_path(G, source_node, h_node, weight="length")
-        length = nx.shortest_path_length(G, source_node, h_node, weight="length")
+        path = nx.astar_path(G, source_node, h_node, heuristic=heuristic, weight="length")
+        length = nx.astar_path_length(G, source_node, h_node, heuristic=heuristic, weight="length")
 
         coordinates = []
         for node in path:
             node_data = G.nodes[node]
             coordinates.append([float(node_data["y"]), float(node_data["x"])])
 
-        directions = get_turn_directions(coordinates)   # <-- ADD THIS LINE
+        directions = get_turn_directions(coordinates)
 
         return {
             "path": coordinates,
@@ -146,7 +191,7 @@ def get_route_to_hospital(source: str, h_lat: float, h_lon: float, h_name: str, 
             "nearest_hospital": h_name,
             "distance_m": round(length),
             "distance_km": round(length / 1000, 2),
-            "directions": directions   # <-- ADD THIS KEY
+            "directions": directions
         }
 
     except Exception as e:

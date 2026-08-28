@@ -34,7 +34,8 @@ class VerifyOTPRequest(BaseModel):
     email: EmailStr
     otp: str
     new_password: str
-
+class UpdateNameRequest(BaseModel):
+    name: str
 @router.post("/signup", response_model=UserResponse)
 def signup(user: UserCreate, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == user.email).first()
@@ -158,3 +159,17 @@ def get_profile(db: Session = Depends(get_db), current_user: User = Depends(get_
         "favourite_mode": favourite_mode,
         "recent_routes": recent_routes
     }
+@router.put("/profile/name")
+def update_name(
+    data: UpdateNameRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not data.name.strip():
+        raise HTTPException(status_code=400, detail="Name cannot be empty")
+
+    current_user.name = data.name.strip()
+    db.commit()
+    db.refresh(current_user)
+
+    return {"name": current_user.name}

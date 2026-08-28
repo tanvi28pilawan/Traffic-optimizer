@@ -2,7 +2,7 @@ import os
 import osmnx as ox
 import networkx as nx
 
-from .geo_utils import get_turn_directions   # <-- ADD THIS IMPORT
+from .geo_utils import get_turn_directions, make_heuristic
 
 _graph_cache = {}
 CACHE_DIR = "graph_cache"
@@ -31,6 +31,7 @@ def get_graph(city: str):
 def get_delivery_route(source: str, stops: list, city: str = "Chhatrapati Sambhajinagar, Maharashtra, India"):
     try:
         G = get_graph(city)
+        heuristic = make_heuristic(G)
 
         city_short = city.split(",")[0].strip()
 
@@ -64,7 +65,7 @@ def get_delivery_route(source: str, stops: list, city: str = "Chhatrapati Sambha
 
             for idx in unvisited:
                 try:
-                    dist = nx.shortest_path_length(G, current_node, stop_nodes[idx], weight="length")
+                    dist = nx.astar_path_length(G, current_node, stop_nodes[idx], heuristic=heuristic, weight="length")
                     if dist < nearest_dist:
                         nearest_dist = dist
                         nearest = stop_nodes[idx]
@@ -85,14 +86,14 @@ def get_delivery_route(source: str, stops: list, city: str = "Chhatrapati Sambha
         total_length = 0
 
         for i in range(len(all_nodes) - 1):
-            segment = nx.shortest_path(G, all_nodes[i], all_nodes[i+1], weight="length")
-            length = nx.shortest_path_length(G, all_nodes[i], all_nodes[i+1], weight="length")
+            segment = nx.astar_path(G, all_nodes[i], all_nodes[i+1], heuristic=heuristic, weight="length")
+            length = nx.astar_path_length(G, all_nodes[i], all_nodes[i+1], heuristic=heuristic, weight="length")
             total_length += length
             for node in segment:
                 node_data = G.nodes[node]
                 full_path.append([node_data["y"], node_data["x"]])
 
-        directions = get_turn_directions(full_path)   # <-- ADD THIS LINE
+        directions = get_turn_directions(full_path)
 
         return {
             "path": full_path,
@@ -101,7 +102,7 @@ def get_delivery_route(source: str, stops: list, city: str = "Chhatrapati Sambha
             "stops": ordered_coords,
             "distance_m": round(total_length),
             "distance_km": round(total_length / 1000, 2),
-            "directions": directions   # <-- ADD THIS KEY
+            "directions": directions
         }
 
     except Exception as e:

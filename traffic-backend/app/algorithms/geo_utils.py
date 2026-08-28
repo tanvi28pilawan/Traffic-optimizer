@@ -37,6 +37,12 @@ def distance_m(a, b):
 
     return R * 2 * math.asin(math.sqrt(a_))
 
+def make_heuristic(G):
+    def heuristic(u, v):
+        u_data = G.nodes[u]
+        v_data = G.nodes[v]
+        return distance_m((u_data["y"], u_data["x"]), (v_data["y"], v_data["x"]))
+    return heuristic
 
 def get_turn_directions(path_coords):
     directions = []

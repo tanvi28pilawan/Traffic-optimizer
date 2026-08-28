@@ -44,6 +44,25 @@ export default function Profile() {
     return name?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "U";
   };
 
+  const handleSaveName = async () => {
+  if (!newName.trim()) return;
+
+  try {
+    const token = localStorage.getItem("token");
+    await axios.put(
+      "http://localhost:8000/auth/profile/name",
+      { name: newName.trim() },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    setProfile((prev) => ({ ...prev, name: newName.trim() }));
+    localStorage.setItem("userName", newName.trim());
+    setEditing(false);
+  } catch (err) {
+    console.error("Failed to update name", err);
+  }
+};
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("userName");
@@ -137,8 +156,12 @@ export default function Profile() {
                   onChange={(e) => setNewName(e.target.value)}
                   autoFocus
                 />
-                <button className="profile-save-btn" onClick={() => setEditing(false)}>Save</button>
-                <button className="profile-cancel-btn" onClick={() => setEditing(false)}>Cancel</button>
+                <button className="profile-save-btn" onClick={handleSaveName}>
+                  Save
+                </button>
+                <button className="profile-cancel-btn" onClick={() => setEditing(false)}>
+                  Cancel
+                </button>
               </div>
             ) : (
               <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
