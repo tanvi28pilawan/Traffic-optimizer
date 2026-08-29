@@ -26,7 +26,7 @@ export default function Signup() {
     setLoading(true);
     setError(null);
     try {
-      await axios.post("${import.meta.env.VITE_API_URL}/auth/signup", {
+      await axios.post('${import.meta.env.VITE_API_URL}/auth/signup', {
   name: form.name,
   email: form.email,
   password: form.password,
