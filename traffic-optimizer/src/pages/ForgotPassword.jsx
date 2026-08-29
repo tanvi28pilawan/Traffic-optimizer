@@ -19,7 +19,7 @@ export default function ForgotPassword() {
     setLoading(true);
     setError(null);
     try {
-      await axios.post("http://localhost:8000/auth/forgot-password", { email });
+      await axios.post("${import.meta.env.VITE_API_URL}/auth/forgot-password", { email });
       setSuccess("OTP sent to your email!");
       setStep(2);
     } catch (err) {
@@ -34,7 +34,7 @@ export default function ForgotPassword() {
     setLoading(true);
     setError(null);
     try {
-      await axios.post("http://localhost:8000/auth/verify-otp", {
+      await axios.post("${import.meta.env.VITE_API_URL}/auth/verify-otp", {
         email, otp, new_password: newPassword
       });
       setSuccess("Password reset successful!");

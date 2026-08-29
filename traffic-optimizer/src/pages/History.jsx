@@ -18,7 +18,7 @@ export default function History() {
     const fetchHistory = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:8000/route/history", {
+        const res = await axios.get("${import.meta.env.VITE_API_URL}/route/history", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setRoutes(res.data);

@@ -71,7 +71,7 @@ export default function ModeSelector({ mode, route, setRoute }) {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        `http://localhost:8000/route/${mode}`,
+        `${import.meta.env.VITE_API_URL}/route/${mode}`,
         {
           mode,
           source,
@@ -105,7 +105,7 @@ export default function ModeSelector({ mode, route, setRoute }) {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        `http://localhost:8000/route/emergency/select`,
+        `${import.meta.env.VITE_API_URL}/route/emergency/select`,
         {
           source,
           city: city,
