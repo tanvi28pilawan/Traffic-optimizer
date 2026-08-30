@@ -2,51 +2,39 @@ import os
 import json
 import math
 
-import requests
 import osmnx as ox
 import networkx as nx
 
 from .geo_utils import get_turn_directions, make_heuristic, distance_m
+from .graph_loader import get_graph
+
 
 # ============================================================
 # OVERPASS CONFIG
 # ============================================================
-# overpass-api.de blocks/rate-limits many cloud/datacenter IPs
-# (Render, Railway, etc.). Using a mirror avoids "Connection refused"
-# errors in production.
-ox.settings.overpass_url = "https://overpass.kumi.systems/api"
+
+ox.settings.overpass_url = os.getenv(
+    "OVERPASS_URL",
+    "https://overpass.kumi.systems/api"
+)
+
 ox.settings.overpass_rate_limit = True
 
 
 # ============================================================
-# PREBUILT GRAPH DOWNLOAD (GitHub Releases)
-# ============================================================
-# Same mechanism as dijkstra.py -- the .graphml files are too large
-# for a normal git push, so they're uploaded as assets on a GitHub
-# Release instead. Set this env var to the release's base download
-# URL, e.g.:
-#
-#   GRAPH_CACHE_BASE_URL=https://github.com/<user>/<repo>/releases/download/v1-graphs
-#
-# If not set, or the download fails, falls back to live Overpass
-# download exactly as before.
-GRAPH_CACHE_BASE_URL = os.getenv("GRAPH_CACHE_BASE_URL", "").rstrip("/")
-
-
-# ============================================================
-# CACHE
+# HOSPITAL CACHE
 # ============================================================
 
-_graph_cache = {}
 _hospital_cache = {}
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))
+)
 
-# IMPORTANT:
-# Same graph_cache folder used by normal/dijkstra.py
-CACHE_DIR = os.path.join(BASE_DIR, "graph_cache")
-
-HOSPITAL_CACHE_DIR = os.path.join(BASE_DIR, "hospital_cache")
+HOSPITAL_CACHE_DIR = os.path.join(
+    BASE_DIR,
+    "hospital_cache"
+)
 
 
 # ============================================================
@@ -70,13 +58,6 @@ def _safe_filename(city: str) -> str:
     )
 
 
-def _graph_cache_file(city: str) -> str:
-    return os.path.join(
-        CACHE_DIR,
-        f"{_safe_filename(city)}.graphml"
-    )
-
-
 def _hospital_cache_file(city: str) -> str:
     return os.path.join(
         HOSPITAL_CACHE_DIR,
@@ -84,203 +65,15 @@ def _hospital_cache_file(city: str) -> str:
     )
 
 
-def _try_download_from_release(city: str, cache_file: str) -> bool:
-    """
-    Attempt to download a prebuilt .graphml for this city from a
-    GitHub Release into cache_file. Returns True on success, False
-    otherwise (caller falls back to live Overpass download).
+# ============================================================
+# HOSPITAL CACHE - SAVE
+# ============================================================
 
-    NOTE: since normal/dijkstra.py, emergency.py, and delivery.py all
-    share the SAME CACHE_DIR and filename convention, whichever mode
-    is hit first downloads the graph and the other two just find it
-    already on disk -- no duplicate downloads.
-    """
-
-    if not GRAPH_CACHE_BASE_URL:
-        return False
-
-    filename = os.path.basename(cache_file)
-    url = f"{GRAPH_CACHE_BASE_URL}/{filename}"
-
-    print(f"[EMERGENCY GRAPH] Trying prebuilt graph download for {city}...")
-    print(f"[EMERGENCY GRAPH] {url}")
-
+def _save_hospitals_to_disk(
+    city: str,
+    hospital_data: list
+):
     try:
-        with requests.get(url, stream=True, timeout=60) as resp:
-            if resp.status_code != 200:
-                print(
-                    f"[EMERGENCY GRAPH] Prebuilt graph not available "
-                    f"(status {resp.status_code}) for {city}, "
-                    f"will fall back to Overpass."
-                )
-                return False
-
-            os.makedirs(CACHE_DIR, exist_ok=True)
-            tmp_file = cache_file + ".tmp"
-
-            with open(tmp_file, "wb") as f:
-                for chunk in resp.iter_content(chunk_size=1024 * 1024):
-                    if chunk:
-                        f.write(chunk)
-
-            os.replace(tmp_file, cache_file)
-
-        print(f"[EMERGENCY GRAPH] Prebuilt graph downloaded for {city}!")
-        return True
-
-    except Exception as e:
-        print(f"[EMERGENCY GRAPH] Prebuilt graph download failed for {city}: {e}")
-        return False
-
-
-# ============================================================
-# GRAPH LOADING
-# ============================================================
-
-def get_graph(city: str):
-    """
-    Load graph using this priority:
-
-    1. Memory cache
-    2. Existing GraphML file
-    3. Prebuilt graph from GitHub Release (GRAPH_CACHE_BASE_URL)
-    4. Download from OSM/Overpass (last resort)
-
-    Emergency uses the SAME graph_cache directory and
-    SAME filename convention as normal mode.
-    """
-
-    city = _normalize_city(city)
-
-    # --------------------------------------------------------
-    # 1. MEMORY CACHE
-    # --------------------------------------------------------
-
-    if city in _graph_cache:
-        print(f"[EMERGENCY GRAPH] Using memory cache: {city}")
-        return _graph_cache[city]
-
-    # --------------------------------------------------------
-    # 2. DISK CACHE
-    # --------------------------------------------------------
-
-    os.makedirs(CACHE_DIR, exist_ok=True)
-
-    cache_file = _graph_cache_file(city)
-
-    print(f"[EMERGENCY GRAPH] Looking for cached graph:")
-    print(f"[EMERGENCY GRAPH] {cache_file}")
-
-    if not os.path.exists(cache_file):
-        # ----------------------------------------------------
-        # 3. TRY PREBUILT GRAPH FROM GITHUB RELEASE
-        # ----------------------------------------------------
-        _try_download_from_release(city, cache_file)
-
-    if os.path.exists(cache_file):
-
-        try:
-            print(
-                f"[EMERGENCY GRAPH] Loading graph from disk "
-                f"for {city}..."
-            )
-
-            G = ox.load_graphml(cache_file)
-
-            _graph_cache[city] = G
-
-            print(
-                f"[EMERGENCY GRAPH] Graph loaded successfully "
-                f"for {city}!"
-            )
-
-            return G
-
-        except Exception as e:
-
-            print(
-                f"[EMERGENCY GRAPH] Cached graph could not be loaded: "
-                f"{e}"
-            )
-
-            # Remove only if corrupted
-            try:
-                os.remove(cache_file)
-                print(
-                    f"[EMERGENCY GRAPH] Removed corrupted cache: "
-                    f"{cache_file}"
-                )
-            except Exception:
-                pass
-
-    # --------------------------------------------------------
-    # 4. DOWNLOAD FROM OVERPASS ONLY IF NOTHING ELSE WORKED
-    # --------------------------------------------------------
-
-    print(
-        f"[EMERGENCY GRAPH] No cached/prebuilt graph found for {city}."
-    )
-
-    print(
-        f"[EMERGENCY GRAPH] Downloading road graph for {city}..."
-    )
-
-    try:
-
-        G = ox.graph_from_place(
-            city,
-            network_type="drive"
-        )
-
-        try:
-
-            ox.save_graphml(
-                G,
-                cache_file
-            )
-
-            print(
-                f"[EMERGENCY GRAPH] Graph downloaded and "
-                f"saved to cache for {city}!"
-            )
-
-        except Exception as e:
-
-            print(
-                f"[EMERGENCY GRAPH] Graph downloaded but "
-                f"could not be saved: {e}"
-            )
-
-        _graph_cache[city] = G
-
-        return G
-
-    except Exception as e:
-
-        raise Exception(
-            f"Unable to load road network for {city}. "
-            f"OpenStreetMap/Overpass may be temporarily unavailable. "
-            f"Details: {str(e)}"
-        )
-
-
-# ============================================================
-# HOSPITAL CACHE
-# ============================================================
-
-def _save_hospitals_to_disk(city: str, hospital_data: list):
-    """
-    Save the already-processed, already-filtered hospital list
-    (list of {name, lat, lon} dicts) to disk.
-
-    IMPORTANT: this must receive the FILTERED list (the same one
-    returned to the caller), not the raw OSM GeoDataFrame -- otherwise
-    vet/pet/animal clinics excluded from the live response would
-    silently reappear on every subsequent disk-cache read.
-    """
-
-    try:
-
         os.makedirs(
             HOSPITAL_CACHE_DIR,
             exist_ok=True
@@ -311,6 +104,10 @@ def _save_hospitals_to_disk(city: str, hospital_data: list):
         )
 
 
+# ============================================================
+# HOSPITAL CACHE - LOAD
+# ============================================================
+
 def _load_hospitals_from_disk(city: str):
 
     cache_file = _hospital_cache_file(city)
@@ -333,8 +130,8 @@ def _load_hospitals_from_disk(city: str):
 
         print(
             f"[HOSPITAL CACHE] Loaded "
-            f"{len(hospital_data)} hospitals from disk "
-            f"for {city}"
+            f"{len(hospital_data)} hospitals "
+            f"from disk for {city}"
         )
 
         return hospital_data
@@ -348,22 +145,29 @@ def _load_hospitals_from_disk(city: str):
         return None
 
 
+# ============================================================
+# GET HOSPITALS
+# ============================================================
+
 def get_hospitals(city: str):
 
     city = _normalize_city(city)
 
     # --------------------------------------------------------
-    # MEMORY
+    # 1. MEMORY CACHE
     # --------------------------------------------------------
 
     if city in _hospital_cache:
+
         print(
-            f"[HOSPITAL CACHE] Using memory cache for {city}"
+            f"[HOSPITAL CACHE] Using memory cache "
+            f"for {city}"
         )
+
         return _hospital_cache[city]
 
     # --------------------------------------------------------
-    # DISK
+    # 2. DISK CACHE
     # --------------------------------------------------------
 
     cached_hospitals = _load_hospitals_from_disk(city)
@@ -375,19 +179,21 @@ def get_hospitals(city: str):
         return cached_hospitals
 
     # --------------------------------------------------------
-    # OSM
+    # 3. OSM
     # --------------------------------------------------------
 
     print(
-        f"[HOSPITAL CACHE] Fetching hospitals from "
-        f"OpenStreetMap for {city}..."
+        f"[HOSPITAL CACHE] Fetching hospitals "
+        f"from OpenStreetMap for {city}..."
     )
 
     try:
 
         hospitals = ox.features_from_place(
             city,
-            tags={"amenity": "hospital"}
+            tags={
+                "amenity": "hospital"
+            }
         )
 
     except Exception as e:
@@ -436,7 +242,7 @@ def get_hospitals(city: str):
 
                 name_lower = name.lower()
 
-                # Ignore animal/veterinary facilities
+                # Ignore veterinary / animal facilities
                 if any(
                     word in name_lower
                     for word in [
@@ -462,13 +268,12 @@ def get_hospitals(city: str):
             "No hospitals found nearby!"
         )
 
-    # Memory cache
+    # --------------------------------------------------------
+    # SAVE CACHE
+    # --------------------------------------------------------
+
     _hospital_cache[city] = hospital_data
 
-    # Disk cache
-    # FIX: save the filtered `hospital_data` list, not the raw
-    # `hospitals` GeoDataFrame -- previously this bypassed the
-    # vet/pet/animal filter for every subsequent disk-cache read.
     _save_hospitals_to_disk(
         city,
         hospital_data
@@ -490,7 +295,8 @@ def get_emergency_route(
 
         city = _normalize_city(city)
 
-        # Load shared graph
+        # IMPORTANT:
+        # Graph comes from shared graph_loader.
         G = get_graph(city)
 
         heuristic = make_heuristic(G)
@@ -541,10 +347,18 @@ def get_emergency_route(
 
             try:
 
-                h_lat = float(hospital["lat"])
-                h_lon = float(hospital["lon"])
+                h_lat = float(
+                    hospital["lat"]
+                )
 
-                if math.isnan(h_lat) or math.isnan(h_lon):
+                h_lon = float(
+                    hospital["lon"]
+                )
+
+                if (
+                    math.isnan(h_lat)
+                    or math.isnan(h_lon)
+                ):
                     continue
 
                 straight_dist = distance_m(
@@ -574,7 +388,7 @@ def get_emergency_route(
                 "No valid hospitals found!"
             )
 
-        # Only nearest 8
+        # Only nearest 8 hospitals
         candidates.sort(
             key=lambda c: c["straight_dist"]
         )
@@ -669,15 +483,24 @@ def get_emergency_route(
 
         return {
             "path": coordinates,
+
             "source": coordinates[0],
+
             "destination": coordinates[-1],
+
             "nearest_hospital": best_hospital,
+
             "hospitals": hospital_list[:10],
-            "distance_m": round(best_length),
+
+            "distance_m": round(
+                best_length
+            ),
+
             "distance_km": round(
                 best_length / 1000,
                 2
             ),
+
             "directions": directions
         }
 
@@ -704,6 +527,7 @@ def get_route_to_hospital(
 
         city = _normalize_city(city)
 
+        # Shared graph loader
         G = get_graph(city)
 
         heuristic = make_heuristic(G)
@@ -760,6 +584,10 @@ def get_route_to_hospital(
             weight="length"
         )
 
+        # ----------------------------------------------------
+        # CONVERT NODES TO COORDINATES
+        # ----------------------------------------------------
+
         coordinates = []
 
         for node in path:
@@ -771,20 +599,37 @@ def get_route_to_hospital(
                 float(node_data["x"])
             ])
 
+        # ----------------------------------------------------
+        # DIRECTIONS
+        # ----------------------------------------------------
+
         directions = get_turn_directions(
             coordinates
         )
 
+        # ----------------------------------------------------
+        # RESPONSE
+        # ----------------------------------------------------
+
         return {
+
             "path": coordinates,
+
             "source": coordinates[0],
+
             "destination": coordinates[-1],
+
             "nearest_hospital": h_name,
-            "distance_m": round(length),
+
+            "distance_m": round(
+                length
+            ),
+
             "distance_km": round(
                 length / 1000,
                 2
             ),
+
             "directions": directions
         }
 
