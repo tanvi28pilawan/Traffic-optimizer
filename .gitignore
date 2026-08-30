@@ -14,5 +14,7 @@ build/
 
 .vscode/
 
+
+traffic-backend/app/graph_cache/
 traffic-backend/graph_cache/
 traffic-backend/cache/

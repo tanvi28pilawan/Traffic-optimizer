@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import LocationInput from "../components/LocationInput";
 
@@ -38,6 +38,12 @@ function formatStepDistance(m) {
   return `${(m / 1000).toFixed(1)} km`;
 }
 
+// Small helper so we don't repeat this in every handler
+function getAuthHeaders() {
+  const token = localStorage.getItem("token");
+  return { Authorization: `Bearer ${token}` };
+}
+
 export default function ModeSelector({ mode, route, setRoute }) {
   const [city, setCity] = useState("Chhatrapati Sambhajinagar, Maharashtra, India");
   const [source, setSource] = useState("");
@@ -47,10 +53,33 @@ export default function ModeSelector({ mode, route, setRoute }) {
   const [error, setError] = useState(null);
   const [info, setInfo] = useState(null);
   const [hospitals, setHospitals] = useState([]);
-  const [selectedHospital, setSelectedHospital] = useState(null);
+  const [selectedHospitalIndex, setSelectedHospitalIndex] = useState(null);
   const [routeLoading, setRouteLoading] = useState(false);
 
   const config = MODE_CONFIG[mode] || MODE_CONFIG.normal;
+
+  // Keep track of the previous mode so we only reset on an actual mode change,
+  // not on every render.
+  const prevModeRef = useRef(mode);
+
+  useEffect(() => {
+    if (prevModeRef.current !== mode) {
+      // Reset everything tied to the previous mode's flow so stale
+      // directions/hospitals/errors from another mode don't linger.
+      setRoute(null);
+      setError(null);
+      setInfo(null);
+      setHospitals([]);
+      setSelectedHospitalIndex(null);
+      setRouteLoading(false);
+      setDestination("");
+      setStops("");
+      // Deliberately NOT resetting `source` or `city` — those are usually
+      // still valid/useful across mode switches. Remove if you'd rather
+      // clear everything.
+      prevModeRef.current = mode;
+    }
+  }, [mode, setRoute]);
 
   const handleFindRoute = async () => {
     if (!source) {
@@ -61,25 +90,31 @@ export default function ModeSelector({ mode, route, setRoute }) {
       setError("Please enter destination.");
       return;
     }
+    if (mode === "delivery" && !stops.trim()) {
+      setError("Please enter at least one delivery stop.");
+      return;
+    }
 
     setLoading(true);
     setError(null);
     setInfo(null);
     setHospitals([]);
-    setSelectedHospital(null);
+    setSelectedHospitalIndex(null);
 
     try {
-      const token = localStorage.getItem("token");
       const res = await axios.post(
         `${import.meta.env.VITE_API_URL}/route/${mode}`,
         {
           mode,
           source,
-          city:city,
+          city: city,
           destination: mode !== "delivery" ? destination : null,
-          stops: mode === "delivery" ? stops.split("\n").filter(s => s.trim()) : null,
+          stops:
+            mode === "delivery"
+              ? stops.split("\n").map((s) => s.trim()).filter(Boolean)
+              : null,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: getAuthHeaders() }
       );
 
       setRoute(res.data);
@@ -92,18 +127,17 @@ export default function ModeSelector({ mode, route, setRoute }) {
       }
     } catch (err) {
       setError(err.response?.data?.detail || "Could not find route. Try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
-  const handleHospitalSelect = async (hospital) => {
-    setSelectedHospital(hospital.name);
+  const handleHospitalSelect = async (hospital, index) => {
+    setSelectedHospitalIndex(index);
     setRouteLoading(true);
     setError(null);
 
     try {
-      const token = localStorage.getItem("token");
       const res = await axios.post(
         `${import.meta.env.VITE_API_URL}/route/emergency/select`,
         {
@@ -113,16 +147,16 @@ export default function ModeSelector({ mode, route, setRoute }) {
           hospital_lon: hospital.coords[1],
           hospital_name: hospital.name,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: getAuthHeaders() }
       );
 
       setRoute(res.data);
       setInfo(`Route to ${hospital.name} | ${res.data.distance_km} km`);
     } catch (err) {
       setError("Could not get route to this hospital.");
+    } finally {
+      setRouteLoading(false);
     }
-
-    setRouteLoading(false);
   };
 
   return (
@@ -139,18 +173,20 @@ export default function ModeSelector({ mode, route, setRoute }) {
         <p className="sidebar-section-title">Route Details</p>
 
         <div className="sidebar-field">
-  <label className="sidebar-label">City</label>
-  <select
-  className="sidebar-input"
-  value={city}
-  onChange={(e) => setCity(e.target.value)}
->
-  <option value="Chhatrapati Sambhajinagar, Maharashtra, India">Chhatrapati Sambhajinagar</option>
-  <option value="Pune, Maharashtra, India">Pune</option>
-  <option value="Nagpur, Maharashtra, India">Nagpur</option>
-  <option value="Bangalore, Karnataka, India">Bangalore</option>
-</select>
-</div>
+          <label className="sidebar-label" htmlFor="city-select">City</label>
+          <select
+            id="city-select"
+            className="sidebar-input"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+          >
+            <option value="Chhatrapati Sambhajinagar, Maharashtra, India">Chhatrapati Sambhajinagar</option>
+            <option value="Pune, Maharashtra, India">Pune</option>
+            <option value="Nagpur, Maharashtra, India">Nagpur</option>
+            <option value="Bangalore, Karnataka, India">Bangalore</option>
+          </select>
+        </div>
+
         <LocationInput
           label="Source"
           placeholder="Enter starting point"
@@ -161,8 +197,9 @@ export default function ModeSelector({ mode, route, setRoute }) {
 
         {mode === "delivery" ? (
           <div className="sidebar-field">
-            <label className="sidebar-label">Delivery Stops</label>
+            <label className="sidebar-label" htmlFor="delivery-stops">Delivery Stops</label>
             <textarea
+              id="delivery-stops"
               className="sidebar-input sidebar-textarea"
               placeholder={"Stop 1\nStop 2\nStop 3"}
               value={stops}
@@ -199,8 +236,8 @@ export default function ModeSelector({ mode, route, setRoute }) {
             {hospitals.map((h, i) => (
               <button
                 key={i}
-                className={`hospital-item ${selectedHospital === h.name ? "selected" : ""}`}
-                onClick={() => handleHospitalSelect(h)}
+                className={`hospital-item ${selectedHospitalIndex === i ? "selected" : ""}`}
+                onClick={() => handleHospitalSelect(h, i)}
                 disabled={routeLoading}
               >
                 <span className="hospital-rank">{i + 1}</span>
@@ -208,7 +245,7 @@ export default function ModeSelector({ mode, route, setRoute }) {
                 {h.distance_km && (
                   <span className="hospital-dist">{h.distance_km} km</span>
                 )}
-                {selectedHospital === h.name && (
+                {selectedHospitalIndex === i && (
                   <span className="hospital-check">✓</span>
                 )}
               </button>
@@ -245,7 +282,7 @@ export default function ModeSelector({ mode, route, setRoute }) {
         {mode === "normal" && (
           <>
             <p className="info-title">How it works</p>
-            <p className="info-text">Dijkstra algorithm finds the shortest path.</p>
+            <p className="info-text">A* algorithm finds the shortest path efficiently.</p>
           </>
         )}
         {mode === "emergency" && (
