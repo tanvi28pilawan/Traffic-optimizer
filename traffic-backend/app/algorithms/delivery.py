@@ -3,7 +3,7 @@ import osmnx as ox
 import networkx as nx
 
 from .geo_utils import get_turn_directions, make_heuristic
-from .graph_loader import get_graph
+from .graph_loader import get_graph, _normalize_city
 
 
 # ============================================================
