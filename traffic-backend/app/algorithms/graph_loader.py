@@ -1,6 +1,8 @@
 import os
 import requests
 import osmnx as ox
+import json
+import math
 
 # ============================================================
 # SHARED GRAPH CACHE
@@ -57,10 +59,10 @@ def _download_graph(city: str, cache_file: str) -> bool:
 
     print(f"[SHARED GRAPH] Downloading {filename}...")
 
+    tmp_file = cache_file + ".tmp"
+
     try:
         os.makedirs(CACHE_DIR, exist_ok=True)
-
-        tmp_file = cache_file + ".tmp"
 
         with requests.get(
             url,
@@ -205,3 +207,142 @@ def get_graph(city: str):
             f"Unable to load road network for {city}. "
             f"Details: {str(e)}"
         )
+
+
+# ============================================================
+# SHARED HOSPITAL CACHE
+# (same RAM-dict pattern as the graph cache above, so
+# emergency.py / normal.py / delivery.py all share ONE copy
+# of the hospital list per city instead of three.)
+# ============================================================
+
+_hospital_cache = {}
+
+HOSPITAL_CACHE_DIR = os.path.join(BASE_DIR, "hospital_cache")
+
+
+def _hospital_cache_file(city: str) -> str:
+    return os.path.join(
+        HOSPITAL_CACHE_DIR,
+        f"{_safe_filename(city)}.json"
+    )
+
+
+def _save_hospitals_to_disk(city: str, hospital_data: list):
+    """
+    Save the already-filtered hospital list (list of {name, lat, lon}
+    dicts) to disk. Must receive the FILTERED list, not the raw OSM
+    GeoDataFrame, or vet/pet/animal clinics would reappear on every
+    subsequent disk-cache read.
+    """
+    try:
+        os.makedirs(HOSPITAL_CACHE_DIR, exist_ok=True)
+
+        with open(
+            _hospital_cache_file(city), "w", encoding="utf-8"
+        ) as f:
+            json.dump(hospital_data, f, ensure_ascii=False, indent=2)
+
+        print(
+            f"[SHARED HOSPITALS] Saved "
+            f"{len(hospital_data)} hospitals for {city}"
+        )
+
+    except Exception as e:
+        print(f"[SHARED HOSPITALS] Could not save hospitals: {e}")
+
+
+def _load_hospitals_from_disk(city: str):
+    cache_file = _hospital_cache_file(city)
+
+    if not os.path.exists(cache_file):
+        return None
+
+    try:
+        with open(cache_file, "r", encoding="utf-8") as f:
+            hospital_data = json.load(f)
+
+        if not hospital_data:
+            return None
+
+        print(
+            f"[SHARED HOSPITALS] Loaded "
+            f"{len(hospital_data)} hospitals from disk for {city}"
+        )
+        return hospital_data
+
+    except Exception as e:
+        print(f"[SHARED HOSPITALS] Could not load cache: {e}")
+        return None
+
+
+def get_hospitals(city: str):
+    city = _normalize_city(city)
+
+    # 1. RAM cache
+    if city in _hospital_cache:
+        print(f"[SHARED HOSPITALS] Using in-memory hospitals for {city}")
+        return _hospital_cache[city]
+
+    # 2. Disk cache
+    cached_hospitals = _load_hospitals_from_disk(city)
+
+    if cached_hospitals is not None:
+        _hospital_cache[city] = cached_hospitals
+        return cached_hospitals
+
+    # 3. OSM/Overpass
+    print(f"[SHARED HOSPITALS] Fetching hospitals from OSM for {city}...")
+
+    try:
+        hospitals = ox.features_from_place(city, tags={"amenity": "hospital"})
+    except Exception as e:
+        raise Exception(
+            f"Could not fetch hospitals for {city}. "
+            f"OpenStreetMap/Overpass may be temporarily unavailable. "
+            f"Details: {str(e)}"
+        )
+
+    hospital_data = []
+
+    if not hospitals.empty:
+        for _, hospital in hospitals.iterrows():
+            try:
+                geometry = hospital.geometry
+
+                if geometry is None:
+                    continue
+
+                if geometry.geom_type == "Point":
+                    lat = float(geometry.y)
+                    lon = float(geometry.x)
+                else:
+                    centroid = geometry.centroid
+                    lat = float(centroid.y)
+                    lon = float(centroid.x)
+
+                if math.isnan(lat) or math.isnan(lon):
+                    continue
+
+                name = hospital.get("name", "Unknown Hospital")
+
+                if not isinstance(name, str):
+                    name = "Unknown Hospital"
+
+                name_lower = name.lower()
+
+                if any(word in name_lower for word in ["vet", "pet", "animal"]):
+                    continue
+
+                hospital_data.append({"name": name, "lat": lat, "lon": lon})
+
+            except Exception:
+                continue
+
+    if not hospital_data:
+        raise Exception("No hospitals found nearby!")
+
+    _hospital_cache[city] = hospital_data
+    _save_hospitals_to_disk(city, hospital_data)
+
+    return hospital_data

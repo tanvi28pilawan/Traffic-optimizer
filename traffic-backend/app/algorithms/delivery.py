@@ -1,28 +1,12 @@
-import os
-import osmnx as ox
 import networkx as nx
+import osmnx as ox
 
 from .geo_utils import get_turn_directions, make_heuristic
 from .graph_loader import get_graph, _normalize_city
 
 
 # ============================================================
-# OVERPASS CONFIG
-# ============================================================
-# Overpass is kept only as a last-resort fallback inside the
-# shared graph_loader. Delivery does NOT maintain its own graph
-# cache, so it cannot create a second copy of the same city graph.
-ox.settings.overpass_url = os.getenv(
-    "OVERPASS_URL",
-    "https://overpass.kumi.systems/api"
-)
-ox.settings.overpass_rate_limit = True
-
-
-# ============================================================
 # DELIVERY ROUTE
-# ============================================================
-
 # ============================================================
 
 def get_delivery_route(
@@ -54,7 +38,6 @@ def get_delivery_route(
                 "Please provide at least one delivery stop."
             )
 
-        # Remove empty/invalid stop names
         valid_stops = []
 
         for stop in stops:
@@ -67,7 +50,8 @@ def get_delivery_route(
             )
 
         # ----------------------------------------------------
-        # Load graph
+        # Load graph (shared cache from graph_loader.py --
+        # same object used by normal/emergency too)
         # ----------------------------------------------------
 
         G = get_graph(city)
@@ -81,13 +65,9 @@ def get_delivery_route(
         # ----------------------------------------------------
 
         try:
-            source_point = ox.geocode(
-                f"{source}, {city}"
-            )
+            source_point = ox.geocode(f"{source}, {city}")
         except Exception:
-            source_point = ox.geocode(
-                f"{source}, {city_short}"
-            )
+            source_point = ox.geocode(f"{source}, {city_short}")
 
         source_node = ox.nearest_nodes(
             G,
@@ -105,13 +85,9 @@ def get_delivery_route(
         for stop in valid_stops:
 
             try:
-                point = ox.geocode(
-                    f"{stop}, {city}"
-                )
+                point = ox.geocode(f"{stop}, {city}")
             except Exception:
-                point = ox.geocode(
-                    f"{stop}, {city_short}"
-                )
+                point = ox.geocode(f"{stop}, {city_short}")
 
             node = ox.nearest_nodes(
                 G,
@@ -170,21 +146,16 @@ def get_delivery_route(
                 except Exception:
                     continue
 
-            # No reachable stop
             if nearest_node is None:
                 break
 
             ordered_stops.append(nearest_node)
-
-            ordered_coords.append(
-                stop_coords[nearest_index]
-            )
+            ordered_coords.append(stop_coords[nearest_index])
 
             unvisited.remove(nearest_index)
 
             current_node = nearest_node
 
-        # If some stops could not be reached
         if unvisited:
             unreachable_names = [
                 stop_coords[idx]["name"]
@@ -205,9 +176,7 @@ def get_delivery_route(
         # Build complete route
         # ----------------------------------------------------
 
-        all_nodes = [
-            source_node
-        ] + ordered_stops
+        all_nodes = [source_node] + ordered_stops
 
         full_path = []
         total_length = 0.0
@@ -234,9 +203,6 @@ def get_delivery_route(
 
                 total_length += segment_length
 
-                # Add segment coordinates
-                # Skip first node of subsequent segments
-                # to prevent duplicate points.
                 start_index = 0 if i == 0 else 1
 
                 for node in segment[start_index:]:
@@ -260,9 +226,7 @@ def get_delivery_route(
         # Turn-by-turn directions
         # ----------------------------------------------------
 
-        directions = get_turn_directions(
-            full_path
-        )
+        directions = get_turn_directions(full_path)
 
         # ----------------------------------------------------
         # Response
@@ -274,15 +238,9 @@ def get_delivery_route(
             "destination": full_path[-1],
             "stops": ordered_coords,
             "distance_m": round(total_length),
-            "distance_km": round(
-                total_length / 1000,
-                2
-            ),
+            "distance_km": round(total_length / 1000, 2),
             "directions": directions
         }
 
     except Exception as e:
-
-        raise Exception(
-            f"Delivery route error: {str(e)}"
-        )
+        raise Exception(f"Delivery route error: {str(e)}")

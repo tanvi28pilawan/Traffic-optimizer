@@ -62,9 +62,9 @@ def emergency_select_hospital(data: HospitalSelect, db: Session = Depends(get_db
 
 @router.post("/delivery")
 def delivery_route(data: RouteCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if not data.stops or len(data.stops) == 0:
+        raise HTTPException(status_code=400, detail="Please provide delivery stops.")
     try:
-        if not data.stops or len(data.stops) == 0:
-            raise HTTPException(status_code=400, detail="Please provide delivery stops.")
         result = get_delivery_route(data.source, data.stops, data.city)
         new_route = Route(mode="delivery", source=data.source, stops=",".join(data.stops), user_id=current_user.id)
         db.add(new_route)

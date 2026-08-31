@@ -1,68 +1,40 @@
-import os
-import math
 import osmnx as ox
 import networkx as nx
 
-from .geo_utils import get_turn_directions, distance_m
-from .graph_loader import get_graph
+from .geo_utils import get_turn_directions, make_heuristic
+from .graph_loader import get_graph, _normalize_city
 
 
 # ============================================================
 # A* HEURISTIC
 # ============================================================
 
-def _make_heuristic(G):
-    """
-    Create a lightweight geographic heuristic for A*.
 
-    Uses straight-line distance between nodes instead of
-    calculating routes repeatedly.
-    """
-
-    def heuristic(u, v):
-
-        u_data = G.nodes[u]
-        v_data = G.nodes[v]
-
-        try:
-            return distance_m(
-                float(u_data["y"]),
-                float(u_data["x"]),
-                float(v_data["y"]),
-                float(v_data["x"])
-            )
-
-        except Exception:
-            return 0
-
-    return heuristic
 
 
 # ============================================================
-# ROUTE CALCULATION
+# NORMAL SHORTEST ROUTE
 # ============================================================
 
-def calculate_route(
+def get_shortest_path(
     source: str,
     destination: str,
-    city: str
+    city: str = "Chhatrapati Sambhajinagar, Maharashtra, India"
 ):
     """
-    Calculate the shortest route between source and destination.
+    Calculate the shortest route between source
+    and destination using A*.
 
-    Graph loading is handled entirely by graph_loader.py.
-
-    Priority handled by graph_loader:
-        1. In-memory graph
-        2. Local graph_cache
-        3. GitHub Release prebuilt graph
-        4. Overpass as last resort
+    Road graphs are loaded from the shared graph_loader cache
+    (same graph object used by emergency and delivery modes).
     """
 
     try:
 
+        city = _normalize_city(city)
+
         # ----------------------------------------------------
-        # LOAD GRAPH
+        # LOAD GRAPH (shared cache from graph_loader.py)
         # ----------------------------------------------------
 
         G = get_graph(city)
@@ -78,32 +50,18 @@ def calculate_route(
         # ----------------------------------------------------
 
         try:
-
-            source_point = ox.geocode(
-                f"{source}, {city}"
-            )
-
+            source_point = ox.geocode(f"{source}, {city}")
         except Exception:
-
-            source_point = ox.geocode(
-                f"{source}, {city_short}"
-            )
+            source_point = ox.geocode(f"{source}, {city_short}")
 
         # ----------------------------------------------------
         # GEOCODE DESTINATION
         # ----------------------------------------------------
 
         try:
-
-            destination_point = ox.geocode(
-                f"{destination}, {city}"
-            )
-
+            destination_point = ox.geocode(f"{destination}, {city}")
         except Exception:
-
-            destination_point = ox.geocode(
-                f"{destination}, {city_short}"
-            )
+            destination_point = ox.geocode(f"{destination}, {city_short}")
 
         # ----------------------------------------------------
         # FIND NEAREST ROAD NODES
@@ -125,7 +83,7 @@ def calculate_route(
         # CREATE A* HEURISTIC
         # ----------------------------------------------------
 
-        heuristic = _make_heuristic(G)
+        heuristic = make_heuristic(G)
 
         # ----------------------------------------------------
         # FIND SHORTEST PATH
@@ -168,9 +126,7 @@ def calculate_route(
         # TURN-BY-TURN DIRECTIONS
         # ----------------------------------------------------
 
-        directions = get_turn_directions(
-            coordinates
-        )
+        directions = get_turn_directions(coordinates)
 
         # ----------------------------------------------------
         # RESPONSE
@@ -178,18 +134,10 @@ def calculate_route(
 
         return {
             "path": coordinates,
-
             "source": coordinates[0],
-
             "destination": coordinates[-1],
-
             "distance_m": round(length),
-
-            "distance_km": round(
-                length / 1000,
-                2
-            ),
-
+            "distance_km": round(length / 1000, 2),
             "directions": directions
         }
 
