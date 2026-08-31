@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from pydantic import BaseModel, EmailStr
 from fastapi.security import OAuth2PasswordBearer
-from fastapi_mail import MessageSchema, MessageType
+import os
+import requests
 
 import random
 import string
@@ -211,43 +212,42 @@ async def forgot_password(
     db.add(new_otp)
     db.commit()
 
-    # Email
-    message = MessageSchema(
-        subject="TrafficOpt — Password Reset OTP",
-        recipients=[data.email],
-        body=f"""
+        # ----------------------------------------------------
+    # Send OTP via Resend (HTTP API — works on Render free
+    # tier, unlike raw SMTP which gets blocked/timed out).
+    # ----------------------------------------------------
+
+    RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+
+    if not RESEND_API_KEY:
+        print("[FORGOT PASSWORD] RESEND_API_KEY not configured")
+        raise HTTPException(
+            status_code=500,
+            detail="Email service is not configured. Please try again later."
+        )
+
+    email_html = f"""
         <h2>Password Reset Request</h2>
+        <p>Your OTP for resetting your TrafficOpt password is:</p>
+        <h1 style="color: #10B981; letter-spacing: 8px;">{otp_code}</h1>
+        <p>This OTP is valid for <strong>10 minutes</strong>.</p>
+        <p>If you did not request this, ignore this email.</p>
+    """
 
-        <p>
-            Your OTP for resetting your
-            TrafficOpt password is:
-        </p>
-
-        <h1 style="color: #10B981; letter-spacing: 8px;">
-            {otp_code}
-        </h1>
-
-        <p>
-            This OTP is valid for
-            <strong>10 minutes</strong>.
-        </p>
-
-        <p>
-            If you did not request this,
-            ignore this email.
-        </p>
-        """,
-        subtype=MessageType.html
-    )
-
-    mail = request.app.state.mail
-
-    # FIX: previously this call was unwrapped -- any SMTP/config
-    # failure (bad credentials, blocked provider, etc.) raised an
-    # unhandled exception and returned a raw 500 to the client,
-    # even though the OTP had already been committed to the DB.
     try:
-        await mail.send_message(message)
+        response = requests.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}"},
+            json={
+                "from": "TrafficOpt <onboarding@resend.dev>",
+                "to": [data.email],
+                "subject": "TrafficOpt — Password Reset OTP",
+                "html": email_html
+            },
+            timeout=15
+        )
+        response.raise_for_status()
+
     except Exception as e:
         print(f"[FORGOT PASSWORD] Failed to send OTP email: {e}")
         raise HTTPException(

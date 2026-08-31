@@ -6,7 +6,6 @@ load_dotenv()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi_mail import FastMail, ConnectionConfig
 
 from .database import engine, Base
 from .routers import auth, route
@@ -25,12 +24,6 @@ OVERPASS_URL = os.getenv(
 
 os.environ["OVERPASS_URL"] = OVERPASS_URL
 
-REQUIRED_MAIL_VARS = [
-    "MAIL_USERNAME",
-    "MAIL_PASSWORD",
-    "MAIL_FROM",
-    "MAIL_SERVER",
-]
 
 
 # ============================================================
@@ -64,32 +57,10 @@ app.add_middleware(
 # EMAIL CONFIGURATION
 # ============================================================
 
-def build_mail_config():
-    missing = [var for var in REQUIRED_MAIL_VARS if not os.getenv(var)]
-
-    if missing:
-        print("=" * 60)
-        print(
-            "[MAIL CONFIG] WARNING: missing env vars:",
-            ", ".join(missing)
-        )
-        print("[MAIL CONFIG] Email-sending endpoints may fail.")
-        print("=" * 60)
-
-    return ConnectionConfig(
-        MAIL_USERNAME=os.getenv("MAIL_USERNAME", ""),
-        MAIL_PASSWORD=os.getenv("MAIL_PASSWORD", ""),
-        MAIL_FROM=os.getenv("MAIL_FROM", "noreply@example.com"),
-        MAIL_PORT=int(os.getenv("MAIL_PORT", 587)),
-        MAIL_SERVER=os.getenv("MAIL_SERVER", ""),
-        MAIL_STARTTLS=True,
-        MAIL_SSL_TLS=False,
-        USE_CREDENTIALS=True,
-    )
 
 
-mail_config = build_mail_config()
-app.state.mail = FastMail(mail_config)
+
+
 
 
 # ============================================================
