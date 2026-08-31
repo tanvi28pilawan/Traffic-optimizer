@@ -9,6 +9,7 @@ import math
 # ============================================================
 
 _graph_cache = {}
+_current_cached_city = None  # tracks which single city is currently in RAM
 
 # traffic-backend/app/graph_cache/
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -107,10 +108,12 @@ def _download_graph(city: str, cache_file: str) -> bool:
 
 def get_graph(city: str):
 
+    global _current_cached_city
+
     city = _normalize_city(city)
 
     # --------------------------------------------------------
-    # 1. RAM CACHE
+    # 1. RAM CACHE (same city already loaded -> reuse, no re-download)
     # --------------------------------------------------------
 
     if city in _graph_cache:
@@ -121,6 +124,21 @@ def get_graph(city: str):
         )
 
         return _graph_cache[city]
+
+    # --------------------------------------------------------
+    # CITY SWITCH -> EVICT PREVIOUS CITY FROM RAM
+    # (keeps memory usage to ~1 city's graph at a time,
+    # important on low-RAM hosting like Render free tier)
+    # --------------------------------------------------------
+
+    if _current_cached_city is not None and _current_cached_city != city:
+
+        print(
+            f"[SHARED GRAPH] Switching city -> evicting "
+            f"{_current_cached_city} from RAM to free memory"
+        )
+
+        _graph_cache.pop(_current_cached_city, None)
 
     # --------------------------------------------------------
     # 2. DISK CACHE
@@ -154,6 +172,7 @@ def get_graph(city: str):
             G = ox.load_graphml(cache_file)
 
             _graph_cache[city] = G
+            _current_cached_city = city
 
             print(
                 f"[SHARED GRAPH] Graph loaded "
@@ -175,7 +194,7 @@ def get_graph(city: str):
                 pass
 
     # --------------------------------------------------------
-    # 5. LAST RESORT — OVERPASS
+    # 5. LAST RESORT - OVERPASS
     # --------------------------------------------------------
 
     print(
@@ -198,6 +217,7 @@ def get_graph(city: str):
             )
 
         _graph_cache[city] = G
+        _current_cached_city = city
 
         return G
 
